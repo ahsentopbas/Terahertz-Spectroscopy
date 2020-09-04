@@ -61,18 +61,18 @@ abs_fft_files = abs(fft_files(1:k,:));
     title('amplitude');
     legend('ITO','GlassforITO','Glassforair','Air') 
 %% Absorbance
-        absorbance = 1e-3.*(-1/dg).*( log( ((abs( fft_files(:,1) ) ).^2) ./ (( abs( fft_files(:,2) ) ).^2) ) ); 
+    absorbance = (-1/dg).*( log( ((abs( fft_files(:,1) ) ).^2) ./ (( abs( fft_files(:,2) ) ).^2) ) ); 
     figure;
     plot(freq_axis_plot(1:k),absorbance(1:k)); 
     grid minor;
-    title('Absorbance vs Frequency');
+    title('Absorption Coefficient vs Frequency');
     xlabel('Frequency (THz)')
-    ylabel('Absorbance(?/nm)')
+    ylabel('Absorption Coefficient')
 %% Phases for glass
     %phase_air = 180*transpose(phase(fft_files(:,4)))./pi;
     %phase_glass = 180*transpose(phase(fft_files(:,3)))./pi;
-        xphase_air = (180/pi).*atan((imag(fft_files(:,4)))./(real(fft_files(:,4))));
-        xphase_glass = (180/pi).*atan((imag(fft_files(:,3)))./(real(fft_files(:,3))));
+        xphase_air = (180/pi).*transpose(atan((imag(fft_files(:,4)))./(real(fft_files(:,4)))));
+        xphase_glass = (180/pi).*transpose(atan((imag(fft_files(:,3)))./(real(fft_files(:,3)))));
     figure;
     grid minor;
     hold on;
