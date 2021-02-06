@@ -1,11 +1,13 @@
 close all
 clear all
 %% old datas
-file_names = ["Feb01_010_average.tim","Feb01_009_average.tim","Jan31_008_average.tim","Jan31_007_average.tim"];
-%% new datas
+% file_names = ["Feb01_006_average.tim","Feb01_007_average.tim","Jan31_009_average.tim","Jan31_007_average.tim"];
+%% new datas1
 % file_names = ["Jul17_009_average.tim","Jul17_010_average.tim","Jul17_004_average.tim","Jul17_005_average.tim"];
 %% NiOx data
-% file_names = ["Aug29_002_average.tim","Aug29_003_average.tim","Aug29_007_average.tim","Aug29_008_average.tim"];
+% file_names = ["Aug29_002_average.tim","Aug29_003_average.tim","Aug29_005_average.tim","Aug29_006_average.tim"];
+%% MAM data
+file_names = ["Sep20_001_average.tim","Sep20_002_average.tim","Sep20_003_average.tim"];
 %%
 files = [];
 % file_names: #1 air, #2 glassforair, #3 glassforito, #4 ito
@@ -15,7 +17,7 @@ sum_phase_air = [];
 sum_phase_glass = [];
 k = 1;
 dg = 1.07*10^-3; % thickness of glass
-ds = 130e-9; % thickness of sample
+ds = 130e-7; % thickness of sample in cm
 c = 3*10^8;
 for i = 1:length(file_names)
     files = cat(2,table2array(importfile(file_names(i))),files); 
@@ -44,43 +46,63 @@ abs_fft_files = abs(fft_files(1:k,:));
 %     plot(files(:,2));
 %     plot(files(:,4));
 %     plot(files(:,6));
-    plot(files(:,1),files(:,2)); % ??
+    plot(files(:,5),files(:,6)); % ??
     plot(files(:,3),files(:,4));
-    plot(files(:,5),files(:,6));
-    plot(files(:,5),files(:,8));
-    legend('ITO','Glassforito','Glassforair','air') 
-
+    plot(files(:,1),files(:,2));
+%     plot(files(:,5),files(:,8));
+    title('Signals in The Time Domain')
+    xlabel('Relative Time (ps)')
+    ylabel('Electric Field (V/m)')
+    %legend('ITO 13\Omega','Glass for ITO','Glass for Air','Air') 
+    %legend('NiOx','Glass for NiOx','Glass for Air','Air')
+    legend('Air','Quartz','MAM')
 %% amplitude
     figure;
     grid minor;
     hold on;
-    plot(freq_axis_plot(1:k),abs(fft_files(1:k,1))); 
-    plot(freq_axis_plot(1:k),abs(fft_files(1:k,2))); 
     plot(freq_axis_plot(1:k),abs(fft_files(1:k,3))); 
-    plot(freq_axis_plot(1:k),abs(fft_files(1:k,4))); 
-    title('amplitude');
-    legend('ITO','GlassforITO','Glassforair','Air') 
-%% Absorbance
-    absorbance = (-1/dg).*( log( ((abs( fft_files(:,1) ) ).^2) ./ (( abs( fft_files(:,2) ) ).^2) ) ); 
+    plot(freq_axis_plot(1:k),abs(fft_files(1:k,2))); 
+    plot(freq_axis_plot(1:k),abs(fft_files(1:k,1))); 
+%     plot(freq_axis_plot(1:k),abs(fft_files(1:k,4))); 
+    title('Signals in The Frequency Domain');
+    ylabel('Amplitude (V/m)')
+    xlabel('Frequency (THz)')
+    %legend('ITO 13\Omega','Glass for ITO','Glass for Air','Air')
+    %legend('NiOx','Glass for NiOx','Glass for Air','Air')  
+    legend('Air','Quartz','MAM')
+%% Transmittance
+    transmittance = ((abs( fft_files(:,1) ) ).^2) ./ (( abs( fft_files(:,2) ) ).^2);
     figure;
-    plot(freq_axis_plot(1:k),absorbance(1:k)); 
+    semilogy(freq_axis_plot(1:k),transmittance(1:k));
+    grid minor;
+    title('Transmittance of The Sample')
+    xlim([0 1])
+    ylim([1e-3 1e0])
+    xlabel('Frequency (THz)')
+    ylabel('Transmittance')
+%% Absorption Coefficient
+    absorp_coeff = (-1/ds).*( log( ((abs( fft_files(:,1) ) ).^2) ./ (( abs( fft_files(:,2) ) ).^2) ) ); 
+    % the required thickness should be ds to find the absorption coefficient of the sample?
+    figure;
+    plot(freq_axis_plot(1:k),absorp_coeff(1:k)); 
     grid minor;
     title('Absorption Coefficient vs Frequency');
+    xlim([0 1])
     xlabel('Frequency (THz)')
-    ylabel('Absorption Coefficient')
+    ylabel('Absorption Coefficient (1/cm)')
 %% Phases for glass
-    %phase_air = 180*transpose(phase(fft_files(:,4)))./pi;
-    %phase_glass = 180*transpose(phase(fft_files(:,3)))./pi;
-        xphase_air = (180/pi).*transpose(atan((imag(fft_files(:,4)))./(real(fft_files(:,4)))));
-        xphase_glass = (180/pi).*transpose(atan((imag(fft_files(:,3)))./(real(fft_files(:,3)))));
+    phase_air = 180*transpose(unwrap(angle(fft_files(:,4))))./pi;
+    phase_glass = 180*transpose(unwrap(angle(fft_files(:,3))))./pi;
     figure;
     grid minor;
     hold on;
-    plot(freq_axis_plot(1:k),xphase_air(1:k));
-    plot(freq_axis_plot(1:k),xphase_glass(1:k));
+    plot(freq_axis_plot(1:k),phase_air(1:k));
+    hold on;
+    plot(freq_axis_plot(1:k),phase_glass(1:k));
+    xlim([0 1])
     legend('Phase air','Phase Glass');
     title('Phases');
-    ylabel('Phase(\pi)')
+    ylabel('Phase(\circ)')
     xlabel('Frequency (THz)')
 %% Phases for ITO
 %     phase_ITO = 180*transpose(phase(fft_files(:,2)))./pi;
@@ -93,11 +115,14 @@ abs_fft_files = abs(fft_files(1:k,:));
 %     legend('Phase ITO','Phase NiOx');
 %     title('phases');
 %% Refractive Index of Glass    
-        refractive_index = 1+(c*(xphase_glass-xphase_air)./(2*pi*dg*freq_axis))*pi/180;
+    refractive_index = 1+(c*(phase_glass-phase_air)./(2*pi*dg*freq_axis))*pi/180;
     figure;
     plot(freq_axis_plot(1:k),refractive_index(1:k)); 
+    xlabel('Frequency (THz)')
+    ylabel('Refractive Index')
+    xlim([0 1])
     grid minor;
-    title('refractive index of glass');
+    title('Refractive Index of Glass');
 %% Refractive Index of ITO    
 %     refractive_index2 = 1+(c*(phase_NiOx-phase_ITO)./(2*pi*(ds+dg)*freq_axis))*3.14/180;
 %     figure;
@@ -105,25 +130,32 @@ abs_fft_files = abs(fft_files(1:k,:));
 %     grid minor;
 %     title('refractive index of ITO');
 %% Extinction Coefficient
-    ext_coeff = ( absorbance ./ (freq_axis.') ) .* (3e8/(4*pi)); %absorbance absorption coefficient de?il, formül yanl??
+    ext_coeff = ( absorp_coeff ./ (freq_axis.') ) .* (3e10/(4*pi));
     figure
     plot(freq_axis_plot(1:k),ext_coeff(1:k));
+    xlim([0 1])
     grid minor
     title('Extinction Coefficient vs. Frequency')
     xlabel('Frequency (THz)')
     ylabel('Extinction Coefficient')
-%% Sheet conductivity    
+%% sheet conductivity    
     sheet_conductivity = (transpose(refractive_index)+1).*(abs(fft_files(:,2))./abs(fft_files(:,1))-1)/377;
     figure;
     plot(freq_axis_plot(1:k),sheet_conductivity(1:k)); 
+    xlim([0 1])
     grid minor;
-    title('sheet conductivity');    
+    xlabel('Frequency (THz)')
+    ylabel('Sheet Conductivity (1/(\Omega*sq))')
+    title('Sheet Conductivity');    
 %% sheet_resistivity
     sheet_resistivity = 1./sheet_conductivity;
     figure;
     plot(freq_axis_plot(1:k),sheet_resistivity(1:k));     
+    xlabel('Frequency (THz)')
+    xlim([0 1])
     grid minor;
-    title('sheet resistivity');
+    title('Sheet Resistivity');
+    ylabel('Sheet Resistivity (\Omega/sq)')
 %% average_sheet_resistivity
     p0=0;
     p1=0;
@@ -143,7 +175,8 @@ abs_fft_files = abs(fft_files(1:k,:));
     for c = p0:p1
        sheet_resistivity_sum = sheet_resistivity_sum + sheet_resistivity(c); 
     end
-    sheet_resistivity_avarage = sheet_resistivity_sum/(p1-p0+1);
+    sheet_resistivity_average = sheet_resistivity_sum/(p1-p0+1);
+
 function average1 = importfile(filename, dataLines)
 %IMPORTFILE Import data from a text file
 %  AVERAGE1 = IMPORTFILE(FILENAME) reads data from text file FILENAME
